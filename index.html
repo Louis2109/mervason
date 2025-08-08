@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mervason Marketplace - E-commerce Multi-vendeur</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <!-- Header Navigation -->
+    <header class="header">
+      <div class="container">
+        <div class="header-content">
+          <div class="logo">
+            <h1>Mervason <span class="marketplace">Marketplace</span></h1>
+          </div>
+          <nav class="nav-desktop">
+            <a href="#" class="nav-link">Accueil</a>
+            <a href="#" class="nav-link">Catégories</a>
+            <a href="#" class="nav-link">Boutiques</a>
+            <a href="#" class="nav-link">Contact</a>
+          </nav>
+          <div class="header-actions">
+            <div class="search-container">
+              <input
+                type="text"
+                placeholder="Rechercher des produits..."
+                class="search-input"
+              />
+              <i class="fas fa-search search-icon"></i>
+            </div>
+            <button class="icon-btn cart-btn">
+              <i class="fas fa-shopping-cart"></i>
+              <span class="badge">3</span>
+            </button>
+            <button class="icon-btn">
+              <i class="fas fa-user"></i>
+            </button>
+            <button class="menu-toggle">
+              <i class="fas fa-bars"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-text">
+            <h2 class="hero-title">Découvrez le meilleur de l'e-commerce</h2>
+            <p class="hero-description">
+              Plateforme multi-vendeur avec des milliers de produits de qualité.
+              Achetez, vendez et découvrez facilement.
+            </p>
+            <div class="hero-buttons">
+              <button class="btn-primary">Commencer à acheter</button>
+              <button class="btn-secondary">Devenir vendeur</button>
+            </div>
+          </div>
+          <div class="hero-image">
+            <div class="hero-placeholder">
+              <i class="fas fa-shopping-bag"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories">
+      <div class="container">
+        <h3 class="section-title">Parcourir par catégories</h3>
+        <div class="categories-grid">
+          <div class="category-card">
+            <div class="category-icon">
+              <i class="fas fa-mobile-alt"></i>
+            </div>
+            <h4>Électronique</h4>
+            <span class="item-count">1,234 produits</span>
+          </div>
+          <div class="category-card">
+            <div class="category-icon">
+              <i class="fas fa-tshirt"></i>
+            </div>
+            <h4>Mode</h4>
+            <span class="item-count">856 produits</span>
+          </div>
+          <div class="category-card">
+            <div class="category-icon">
+              <i class="fas fa-home"></i>
+            </div>
+            <h4>Maison</h4>
+            <span class="item-count">642 produits</span>
+          </div>
+          <div class="category-card">
+            <div class="category-icon">
+              <i class="fas fa-dumbbell"></i>
+            </div>
+            <h4>Sport</h4>
+            <span class="item-count">398 produits</span>
+          </div>
+          <div class="category-card">
+            <div class="category-icon">
+              <i class="fas fa-book"></i>
+            </div>
+            <h4>Livres</h4>
+            <span class="item-count">289 produits</span>
+          </div>
+          <div class="category-card">
+            <div class="category-icon">
+              <i class="fas fa-gamepad"></i>
+            </div>
+            <h4>Jeux</h4>
+            <span class="item-count">156 produits</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Products -->
+    <section class="featured-products">
+      <div class="container">
+        <div class="section-header">
+          <h3 class="section-title">Produits populaires</h3>
+          <a href="#" class="view-all"
+            >Voir tout <i class="fas fa-arrow-right"></i
+          ></a>
+        </div>
+        <div class="products-grid">
+          <div class="product-card">
+            <div class="product-image">
+              <div class="product-placeholder">
+                <i class="fas fa-image"></i>
+              </div>
+              <button class="wishlist-btn">
+                <i class="far fa-heart"></i>
+              </button>
+              <span class="discount-badge">-20%</span>
+            </div>
+            <div class="product-info">
+              <h4 class="product-title">Smartphone Samsung Galaxy</h4>
+              <div class="product-rating">
+                <div class="stars">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="far fa-star"></i>
+                </div>
+                <span class="rating-count">(127)</span>
+              </div>
+              <div class="product-price">
+                <span class="current-price">250 000 FCFA</span>
+                <span class="original-price">312 500 FCFA</span>
+              </div>
+              <button class="add-to-cart-btn">
+                <i class="fas fa-shopping-cart"></i>
+                Ajouter au panier
+              </button>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-image">
+              <div class="product-placeholder">
+                <i class="fas fa-image"></i>
+              </div>
+              <button class="wishlist-btn">
+                <i class="far fa-heart"></i>
+              </button>
+            </div>
+            <div class="product-info">
+              <h4 class="product-title">Chaussures de sport Nike</h4>
+              <div class="product-rating">
+                <div class="stars">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                </div>
+                <span class="rating-count">(89)</span>
+              </div>
+              <div class="product-price">
+                <span class="current-price">85 000 FCFA</span>
+              </div>
+              <button class="add-to-cart-btn">
+                <i class="fas fa-shopping-cart"></i>
+                Ajouter au panier
+              </button>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-image">
+              <div class="product-placeholder">
+                <i class="fas fa-image"></i>
+              </div>
+              <button class="wishlist-btn">
+                <i class="far fa-heart"></i>
+              </button>
+              <span class="new-badge">Nouveau</span>
+            </div>
+            <div class="product-info">
+              <h4 class="product-title">Ordinateur portable HP</h4>
+              <div class="product-rating">
+                <div class="stars">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="far fa-star"></i>
+                </div>
+                <span class="rating-count">(203)</span>
+              </div>
+              <div class="product-price">
+                <span class="current-price">450 000 FCFA</span>
+              </div>
+              <button class="add-to-cart-btn">
+                <i class="fas fa-shopping-cart"></i>
+                Ajouter au panier
+              </button>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-image">
+              <div class="product-placeholder">
+                <i class="fas fa-image"></i>
+              </div>
+              <button class="wishlist-btn">
+                <i class="far fa-heart"></i>
+              </button>
+            </div>
+            <div class="product-info">
+              <h4 class="product-title">Robe élégante femme</h4>
+              <div class="product-rating">
+                <div class="stars">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                </div>
+                <span class="rating-count">(45)</span>
+              </div>
+              <div class="product-price">
+                <span class="current-price">35 000 FCFA</span>
+              </div>
+              <button class="add-to-cart-btn">
+                <i class="fas fa-shopping-cart"></i>
+                Ajouter au panier
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+      <div class="container">
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-shipping-fast"></i>
+            </div>
+            <h4>Livraison rapide</h4>
+            <p>Livraison gratuite sur commandes de plus de 50 000 FCFA</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-shield-alt"></i>
+            </div>
+            <h4>Paiement sécurisé</h4>
+            <p>Transactions sécurisées avec CinetPay et Flutterwave</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-headset"></i>
+            </div>
+            <h4>Support 24/7</h4>
+            <p>Notre équipe est disponible pour vous aider</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-undo"></i>
+            </div>
+            <h4>Retour facile</h4>
+            <p>Politique de retour sous 30 jours</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-section">
+            <h4>Mervason Marketplace</h4>
+            <p>
+              Votre destination e-commerce de confiance pour tous vos besoins.
+            </p>
+            <div class="social-links">
+              <a href="#"><i class="fab fa-facebook"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+              <a href="#"><i class="fab fa-instagram"></i></a>
+              <a href="#"><i class="fab fa-linkedin"></i></a>
+            </div>
+          </div>
+          <div class="footer-section">
+            <h5>Navigation</h5>
+            <ul>
+              <li><a href="#">Accueil</a></li>
+              <li><a href="#">Catégories</a></li>
+              <li><a href="#">Boutiques</a></li>
+              <li><a href="#">À propos</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h5>Support</h5>
+            <ul>
+              <li><a href="#">Centre d'aide</a></li>
+              <li><a href="#">Contact</a></li>
+              <li><a href="#">Livraison</a></li>
+              <li><a href="#">Retours</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h5>Paiements acceptés</h5>
+            <div class="payment-methods">
+              <span class="payment-badge">Orange Money</span>
+              <span class="payment-badge">Mobile Money</span>
+              <span class="payment-badge">Visa</span>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy; 2025 Mervason Marketplace. Tous droits réservés.</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav">
+      <a href="#" class="nav-item active">
+        <i class="fas fa-home"></i>
+        <span>Accueil</span>
+      </a>
+      <a href="#" class="nav-item">
+        <i class="fas fa-search"></i>
+        <span>Recherche</span>
+      </a>
+      <a href="#" class="nav-item">
+        <i class="fas fa-shopping-cart"></i>
+        <span>Panier</span>
+      </a>
+      <a href="#" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>Profil</span>
+      </a>
+    </nav>
+  </body>
+</html>

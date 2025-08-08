@@ -1,0 +1,432 @@
+{
+  "project": "Mervason Marketplace - E-commerce Style",
+  "analysis": {
+    "app_type": "E-commerce mobile app design",
+    "total_screens": "~30 screens",
+    "design_style": "Modern, clean, product-focused",
+    "primary_layout": "Mobile-first design"
+  },
+  "color_palette": {
+    "light_mode": {
+      "primary": "#FF4500",
+      "primary_dark": "#E63E00",
+      "background": "#FFFFFF",
+      "surface": "#F8F9FA",
+      "surface_secondary": "#F5F5F5",
+      "text_primary": "#1A1A1A",
+      "text_secondary": "#6B7280",
+      "text_muted": "#9CA3AF",
+      "border": "#E5E7EB",
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "accent_yellow": "#FCD34D",
+      "accent_cream": "#FEF7ED"
+    },
+    "dark_mode": {
+      "primary": "#FF4500",
+      "primary_dark": "#E63E00",
+      "background": "#0F0F0F",
+      "surface": "#1F1F1F",
+      "surface_secondary": "#2A2A2A",
+      "text_primary": "#FFFFFF",
+      "text_secondary": "#B0B0B0",
+      "text_muted": "#6B7280",
+      "border": "#374151",
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "accent_yellow": "#FCD34D",
+      "accent_cream": "#292524"
+    }
+  },
+  "typography": {
+    "font_family": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+    "font_weights": {
+      "light": 300,
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "font_sizes": {
+      "heading_large": "32px",
+      "heading_medium": "24px",
+      "heading_small": "20px",
+      "body_large": "18px",
+      "body_regular": "16px",
+      "body_small": "14px",
+      "caption": "12px",
+      "button": "16px"
+    }
+  },
+  "layout_structure": {
+    "grid_system": {
+      "mobile": "1-column with 16px margins",
+      "tablet": "2-column adaptive",
+      "desktop": "12-column grid (not primary focus)"
+    },
+    "spacing_system": {
+      "xs": "4px",
+      "sm": "8px",
+      "md": "16px",
+      "lg": "24px",
+      "xl": "32px",
+      "xxl": "48px"
+    }
+  },
+  "screen_categories": {
+    "onboarding_auth": [
+      {
+        "screen": "Splash Screen",
+        "sections": ["logo", "brand_name", "loading_indicator"]
+      },
+      {
+        "screen": "Onboarding Steps",
+        "sections": [
+          "illustration",
+          "title",
+          "description",
+          "progress_dots",
+          "next_button"
+        ]
+      },
+      {
+        "screen": "Login",
+        "sections": [
+          "header",
+          "form_fields",
+          "forgot_password",
+          "login_button",
+          "social_login",
+          "signup_link"
+        ]
+      },
+      {
+        "screen": "Register",
+        "sections": [
+          "header",
+          "form_fields",
+          "terms_checkbox",
+          "register_button",
+          "login_link"
+        ]
+      }
+    ],
+    "main_navigation": [
+      {
+        "screen": "Home Dashboard",
+        "sections": [
+          "status_bar",
+          "greeting_header",
+          "search_bar",
+          "banner_carousel",
+          "categories_grid",
+          "featured_items",
+          "bottom_navigation"
+        ]
+      },
+      {
+        "screen": "Categories Grid",
+        "sections": [
+          "header_with_back",
+          "categories_list",
+          "category_cards_4x2_grid"
+        ]
+      }
+    ],
+    "product_browsing": [
+      {
+        "screen": "Restaurant/Store List",
+        "sections": [
+          "header_with_filters",
+          "search_results_count",
+          "store_cards_vertical_list",
+          "filter_bottom_sheet"
+        ]
+      },
+      {
+        "screen": "Restaurant/Store Detail",
+        "sections": [
+          "hero_image",
+          "store_info_header",
+          "tabs_navigation",
+          "menu_categories",
+          "product_grid",
+          "sticky_cart_button"
+        ]
+      },
+      {
+        "screen": "Product Detail",
+        "sections": [
+          "product_image_carousel",
+          "product_info",
+          "options_selection",
+          "quantity_selector",
+          "add_to_cart_button",
+          "related_products"
+        ]
+      }
+    ],
+    "cart_checkout": [
+      {
+        "screen": "Shopping Cart",
+        "sections": [
+          "header",
+          "cart_items_list",
+          "promo_code_input",
+          "price_breakdown",
+          "checkout_button"
+        ]
+      },
+      {
+        "screen": "Checkout Steps",
+        "sections": [
+          "progress_indicator",
+          "delivery_address",
+          "payment_method",
+          "order_summary",
+          "place_order_button"
+        ]
+      }
+    ],
+    "user_profile": [
+      {
+        "screen": "Profile Dashboard",
+        "sections": [
+          "user_header",
+          "menu_options_list",
+          "settings_section",
+          "logout_button"
+        ]
+      },
+      {
+        "screen": "Order History",
+        "sections": [
+          "header",
+          "filter_tabs",
+          "order_cards_list",
+          "order_status_badges"
+        ]
+      },
+      {
+        "screen": "Favorites/Wishlist",
+        "sections": ["header", "favorites_grid", "empty_state_illustration"]
+      }
+    ],
+    "delivery_tracking": [
+      {
+        "screen": "Order Tracking",
+        "sections": [
+          "map_view",
+          "delivery_progress",
+          "driver_info",
+          "estimated_time",
+          "contact_buttons"
+        ]
+      },
+      {
+        "screen": "Order Confirmation",
+        "sections": [
+          "success_illustration",
+          "order_details",
+          "tracking_button",
+          "rate_order"
+        ]
+      }
+    ]
+  },
+  "component_library": {
+    "buttons": [
+      {
+        "type": "primary",
+        "style": {
+          "background": "#FF4500",
+          "color": "#FFFFFF",
+          "border_radius": "12px",
+          "padding": "16px 24px",
+          "font_weight": "semibold",
+          "min_height": "48px"
+        }
+      },
+      {
+        "type": "secondary",
+        "style": {
+          "background": "transparent",
+          "color": "#FF4500",
+          "border": "1px solid #FF4500",
+          "border_radius": "12px",
+          "padding": "16px 24px"
+        }
+      },
+      {
+        "type": "ghost",
+        "style": {
+          "background": "surface_secondary",
+          "color": "text_primary",
+          "border_radius": "12px",
+          "padding": "16px 24px"
+        }
+      },
+      {
+        "type": "icon_button",
+        "style": {
+          "background": "surface",
+          "border_radius": "50%",
+          "padding": "12px",
+          "size": "48px"
+        }
+      },
+      {
+        "type": "floating_action",
+        "style": {
+          "background": "#FF4500",
+          "color": "#FFFFFF",
+          "border_radius": "50%",
+          "size": "56px",
+          "elevation": "high",
+          "position": "fixed"
+        }
+      }
+    ],
+    "cards": [
+      {
+        "type": "food_item_card",
+        "layout": "horizontal",
+        "elements": [
+          "food_image",
+          "title",
+          "description",
+          "price",
+          "rating",
+          "add_button"
+        ],
+        "dimensions": "full_width x 120px"
+      },
+      {
+        "type": "restaurant_card",
+        "layout": "vertical",
+        "elements": [
+          "cover_image",
+          "logo",
+          "name",
+          "rating",
+          "delivery_info",
+          "promo_badge"
+        ],
+        "dimensions": "180px x 200px"
+      },
+      {
+        "type": "category_card",
+        "layout": "square",
+        "elements": ["background_image", "category_name", "items_count"],
+        "dimensions": "80px x 80px"
+      },
+      {
+        "type": "order_card",
+        "layout": "vertical",
+        "elements": [
+          "restaurant_name",
+          "items_list",
+          "total_price",
+          "status_badge",
+          "reorder_button"
+        ],
+        "dimensions": "full_width x variable"
+      }
+    ],
+    "forms": [
+      {
+        "type": "input_field",
+        "style": {
+          "background": "surface",
+          "border": "1px solid border",
+          "border_radius": "12px",
+          "padding": "16px",
+          "font_size": "body_regular"
+        }
+      },
+      {
+        "type": "search_bar",
+        "elements": ["search_icon", "placeholder_text", "filter_button"],
+        "style": {
+          "background": "surface_secondary",
+          "border_radius": "16px",
+          "padding": "12px 16px"
+        }
+      }
+    ],
+    "navigation": {
+      "bottom_tabs": {
+        "items": ["Home", "Search", "Orders", "Profile"],
+        "style": {
+          "background": "surface",
+          "height": "72px",
+          "icon_size": "24px",
+          "active_color": "#FF4500"
+        }
+      },
+      "top_header": {
+        "variants": ["with_back_button", "with_search", "with_cart_icon"],
+        "height": "56px",
+        "style": {
+          "background": "background",
+          "border_bottom": "1px solid border"
+        }
+      }
+    }
+  },
+  "visual_elements": {
+    "border_radius": {
+      "small": "8px",
+      "medium": "12px",
+      "large": "16px",
+      "extra_large": "24px",
+      "full": "50%"
+    },
+    "shadows": {
+      "card": "0 2px 8px rgba(0, 0, 0, 0.06)",
+      "modal": "0 8px 24px rgba(0, 0, 0, 0.12)",
+      "floating": "0 4px 16px rgba(0, 0, 0, 0.1)"
+    },
+    "animations": {
+      "transition": "300ms cubic-bezier(0.4, 0, 0.2, 1)",
+      "bounce": "spring(1, 100, 13, 0)",
+      "slide_up": "translateY(100%) to translateY(0)"
+    }
+  },
+  "responsive_behavior": {
+    "mobile_first": true,
+    "breakpoints": {
+      "mobile": "0px - 767px (primary)",
+      "tablet": "768px - 1023px",
+      "desktop": "1024px+"
+    },
+    "adaptive_elements": [
+      "bottom_sheet_on_mobile",
+      "sidebar_on_desktop",
+      "grid_columns_responsive",
+      "font_scaling"
+    ]
+  },
+  "interaction_patterns": {
+    "gestures": [
+      "swipe_between_tabs",
+      "pull_to_refresh",
+      "swipe_to_delete",
+      "pinch_to_zoom_on_images"
+    ],
+    "feedback": [
+      "haptic_on_button_press",
+      "loading_states",
+      "success_animations",
+      "error_states"
+    ]
+  },
+  "accessibility": {
+    "contrast_ratios": "WCAG AA compliant",
+    "touch_targets": "minimum 44px",
+    "focus_indicators": "2px solid primary",
+    "screen_reader_support": "semantic markup"
+  }
+}
