@@ -54,5 +54,5 @@ Interface responsive avec support mode clair/sombre, couleur principale orange.
 
 ## 💰 Budget
 
-- Coût total: 100 000 FCFA
+- Coût total: 250 000 FCFA
 - Modalités: 50% commande, 50% livraison
