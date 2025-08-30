@@ -11,14 +11,6 @@
   --secondary-500: #eab308;
 }
 
-/* Dark mode variables */
-[data-theme="dark"] {
-  --bg-primary: #111827;
-  --bg-secondary: #1f2937;
-  --text-primary: #f9fafb;
-  --text-secondary: #d1d5db;
-}
-
 /* Base styles */
 * {
   box-sizing: border-box;

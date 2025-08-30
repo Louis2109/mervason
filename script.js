@@ -5,7 +5,7 @@ function app() {
     currentPage: "home",
     mobileMenuOpen: false,
     searchModalOpen: false,
-    darkMode: localStorage.getItem("darkMode") === "true" || false,
+    darkMode: false, // Default to light mode
     cartCount: 0,
     cart: JSON.parse(localStorage.getItem("cart")) || [],
     currentUser: JSON.parse(localStorage.getItem("currentUser")) || null,
@@ -74,6 +74,7 @@ function app() {
 
     // Initialization
     init() {
+      this.initializeTheme();
       this.applyTheme();
       this.initializeCart();
       this.setupNavigation();
@@ -82,18 +83,39 @@ function app() {
     },
 
     // Theme Management
+    initializeTheme() {
+      const savedTheme = localStorage.getItem("darkMode");
+      if (savedTheme !== null) {
+        this.darkMode = savedTheme === "true";
+      } else {
+        // Default to light mode for new users
+        this.darkMode = false;
+        localStorage.setItem("darkMode", "false");
+      }
+    },
     toggleDarkMode() {
+      console.log("AVANT toggle - darkMode:", this.darkMode);
       this.darkMode = !this.darkMode;
-      localStorage.setItem("darkMode", this.darkMode);
+      console.log("APRÈS toggle - darkMode:", this.darkMode);
+      localStorage.setItem("darkMode", this.darkMode.toString());
       this.applyTheme();
     },
 
     applyTheme() {
+      const html = document.documentElement;
+      console.log("applyTheme called - darkMode:", this.darkMode);
+      console.log("HTML element:", html);
+      console.log("Classes AVANT:", html.classList.toString());
+
       if (this.darkMode) {
-        document.documentElement.classList.add("dark");
+        html.classList.add("dark");
+        console.log("Ajout de la classe dark");
       } else {
-        document.documentElement.classList.remove("dark");
+        html.classList.remove("dark");
+        console.log("Suppression de la classe dark");
       }
+
+      console.log("Classes APRÈS:", html.classList.toString());
     },
 
     // Navigation Management
