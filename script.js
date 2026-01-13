@@ -10,6 +10,9 @@ function app() {
     cart: JSON.parse(localStorage.getItem("cart")) || [],
     currentUser: JSON.parse(localStorage.getItem("currentUser")) || null,
     isLoggedIn: false,
+    merchantProducts: [],
+    showAddProductForm: false,
+    editingProduct: null,
     toast: {
       show: false,
       message: "",
@@ -56,18 +59,6 @@ function app() {
         rating: 4.9,
         reviews: 203,
       },
-      {
-        id: 4,
-        name: "Chaussures Nike Air Max",
-        price: 85000,
-        image:
-          "https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        category: "Sports & Loisirs",
-        description: "Baskets Nike confortables pour le sport et le quotidien",
-        vendor: "Sport Plus",
-        rating: 4.5,
-        reviews: 112,
-      },
     ],
 
     allProducts: [],
@@ -78,6 +69,7 @@ function app() {
       this.applyTheme();
       this.initializeCart();
       this.setupNavigation();
+      this.loadMerchantProducts();
       this.loadAllProducts();
       this.checkAuthStatus();
     },
@@ -192,60 +184,8 @@ function app() {
     },
 
     loadAllProducts() {
-      // Simulate loading all products for shop page
-      const additionalProducts = [
-        {
-          id: 5,
-          name: "Samsung Galaxy S23",
-          price: 580000,
-          image:
-            "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-          category: "Électronique",
-          description:
-            "Smartphone Samsung avec écran AMOLED et appareil photo 200MP",
-          vendor: "Mobile World",
-          rating: 4.7,
-          reviews: 134,
-        },
-        {
-          id: 6,
-          name: "Sac à main cuir",
-          price: 45000,
-          image:
-            "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-          category: "Mode & Beauté",
-          description: "Sac à main en cuir véritable, élégant et pratique",
-          vendor: "Leather Craft",
-          rating: 4.4,
-          reviews: 67,
-        },
-        {
-          id: 7,
-          name: "Casque Audio Sony",
-          price: 125000,
-          image:
-            "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-          category: "Électronique",
-          description: "Casque sans fil avec réduction de bruit active",
-          vendor: "Audio Pro",
-          rating: 4.8,
-          reviews: 189,
-        },
-        {
-          id: 8,
-          name: "Montre connectée",
-          price: 75000,
-          image:
-            "https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-          category: "Électronique",
-          description: "Montre intelligente avec suivi de santé et GPS",
-          vendor: "Smart Tech",
-          rating: 4.5,
-          reviews: 98,
-        },
-      ];
-
-      this.allProducts = [...this.featuredProducts, ...additionalProducts];
+      // Merger les produits samples et marchands
+      this.allProducts = [...this.featuredProducts, ...this.merchantProducts];
       this.products = this.allProducts;
     },
 
@@ -347,14 +287,33 @@ function app() {
     },
 
     login(email, password) {
-      // Simulate login
+      // Simulate login - MVP sans DB
+      // En production : vérifier en base de données
       if (email && password) {
-        this.currentUser = {
-          id: 1,
-          email: email,
-          name: "John Doe",
-          role: "customer",
-        };
+        // Chercher user existant (simulation)
+        // Pour MVP, on crée un user temporaire
+        const existingUser = this.loadFromStorage("users_" + email);
+        
+        if (existingUser) {
+          // User existe
+          this.currentUser = existingUser;
+        } else {
+          // Créer user temporaire (simulation MVP)
+          const userId = Date.now();
+          this.currentUser = {
+            id: userId,
+            email: email,
+            firstName: email.split("@")[0], // Extraire prénom de l'email
+            lastName: "User",
+            phone: "",
+            merchantId: `merchant_${userId}`,
+            role: "merchant",
+            createdAt: userId,
+          };
+          // Sauvegarder pour prochaine fois
+          this.saveToStorage("users_" + email, this.currentUser);
+        }
+        
         localStorage.setItem("currentUser", JSON.stringify(this.currentUser));
         this.isLoggedIn = true;
         this.showToast("Connexion réussie", "success");
@@ -366,17 +325,28 @@ function app() {
     },
 
     register(userData) {
-      // Simulate registration
+      // Register user as merchant automatically
       if (userData.email && userData.password) {
+        const userId = Date.now();
+        const merchantId = `merchant_${userId}`;
+        
         this.currentUser = {
-          id: Date.now(),
-          ...userData,
-          role: "customer",
+          id: userId,
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          phone: userData.phone,
+          merchantId: merchantId,
+          role: "merchant", // Auto-merchant pour MVP
+          createdAt: userId,
         };
+        
         localStorage.setItem("currentUser", JSON.stringify(this.currentUser));
         this.isLoggedIn = true;
-        this.showToast("Compte créé avec succès", "success");
-        this.navigateTo("home");
+        this.showToast("Compte créé avec succès ! Vous pouvez maintenant poster des produits.", "success");
+        
+        // Redirect vers dashboard marchands
+        this.navigateTo("merchant-products");
         return true;
       }
       this.showToast("Veuillez remplir tous les champs", "error");
@@ -393,21 +363,162 @@ function app() {
 
     // Merchant Actions
     becomeMerchant() {
+      // Fonction obsolète - Tout user est déjà merchant
+      // Gardée pour compatibilité navigation HTML
       if (!this.isLoggedIn) {
         this.showToast(
-          "Veuillez vous connecter pour devenir marchand",
+          "Veuillez vous connecter",
           "error"
         );
         this.navigateTo("login");
         return;
       }
 
-      // Simulate merchant subscription
-      this.currentUser.role = "merchant";
-      this.currentUser.merchantStatus = "pending";
-      localStorage.setItem("currentUser", JSON.stringify(this.currentUser));
-      this.showToast("Demande de marchand envoyée", "success");
-      this.navigateTo("merchant-dashboard");
+      // Rediriger vers dashboard produits
+      this.navigateTo("merchant-products");
+    },
+
+    // Check if current user is merchant (always true in MVP)
+    isMerchant() {
+      return this.isLoggedIn && this.currentUser?.role === "merchant";
+    },
+
+    // Check if user can edit a specific product
+    canEditProduct(product) {
+      if (!this.isLoggedIn) return false;
+      if (!this.isMerchant()) return false;
+      if (!product.merchantId) return false; // Sample products
+      return product.merchantId === this.currentUser.merchantId;
+    },
+
+    // Get merchant display name
+    getMerchantName() {
+      if (!this.currentUser) return "Anonyme";
+      return `${this.currentUser.firstName} ${this.currentUser.lastName}`;
+    },
+
+    // ========== CRUD PRODUCTS ==========
+    
+    // Load merchant products from localStorage
+    loadMerchantProducts() {
+      const stored = localStorage.getItem("merchantProducts");
+      this.merchantProducts = stored ? JSON.parse(stored) : [];
+    },
+
+    // Save merchant products to localStorage
+    saveMerchantProducts() {
+      localStorage.setItem("merchantProducts", JSON.stringify(this.merchantProducts));
+      this.loadAllProducts(); // Refresh merged products
+    },
+
+    // Get products of current merchant
+    getMyProducts() {
+      if (!this.isMerchant()) return [];
+      return this.merchantProducts.filter(
+        (p) => p.merchantId === this.currentUser.merchantId
+      );
+    },
+
+    // Add new merchant product
+    addMerchantProduct(productData) {
+      if (!this.isMerchant()) {
+        this.showToast("Vous devez être marchand pour ajouter des produits", "error");
+        return false;
+      }
+
+      const productId = `prod_${Date.now()}`;
+      const newProduct = {
+        id: productId,
+        merchantId: this.currentUser.merchantId,
+        merchantName: this.getMerchantName(),
+        name: productData.name,
+        price: parseFloat(productData.price),
+        image: productData.image || "https://via.placeholder.com/400",
+        category: productData.category,
+        description: productData.description,
+        stock: parseInt(productData.stock) || 0,
+        status: "active",
+        vendor: this.getMerchantName(),
+        rating: 0,
+        reviews: 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      this.merchantProducts.push(newProduct);
+      this.saveMerchantProducts();
+      this.showToast("Produit ajouté avec succès", "success");
+      this.showAddProductForm = false;
+      return true;
+    },
+
+    // Update existing product
+    updateProduct(productId, updatedData) {
+      const index = this.merchantProducts.findIndex((p) => p.id === productId);
+      
+      if (index === -1) {
+        this.showToast("Produit introuvable", "error");
+        return false;
+      }
+
+      const product = this.merchantProducts[index];
+      
+      if (!this.canEditProduct(product)) {
+        this.showToast("Vous ne pouvez pas modifier ce produit", "error");
+        return false;
+      }
+
+      this.merchantProducts[index] = {
+        ...product,
+        ...updatedData,
+        updatedAt: Date.now(),
+      };
+
+      this.saveMerchantProducts();
+      this.showToast("Produit mis à jour avec succès", "success");
+      this.editingProduct = null;
+      this.showAddProductForm = false;
+      return true;
+    },
+
+    // Delete product
+    deleteProduct(productId) {
+      const product = this.merchantProducts.find((p) => p.id === productId);
+      
+      if (!product) {
+        this.showToast("Produit introuvable", "error");
+        return false;
+      }
+
+      if (!this.canEditProduct(product)) {
+        this.showToast("Vous ne pouvez pas supprimer ce produit", "error");
+        return false;
+      }
+
+      if (confirm(`Êtes-vous sûr de vouloir supprimer "${product.name}" ?`)) {
+        this.merchantProducts = this.merchantProducts.filter((p) => p.id !== productId);
+        this.saveMerchantProducts();
+        this.showToast("Produit supprimé avec succès", "success");
+        return true;
+      }
+      
+      return false;
+    },
+
+    // Start editing product
+    startEditProduct(product) {
+      if (!this.canEditProduct(product)) {
+        this.showToast("Vous ne pouvez pas modifier ce produit", "error");
+        return;
+      }
+      this.editingProduct = { ...product };
+      this.showAddProductForm = true;
+    },
+
+    // Cancel editing
+    cancelEditProduct() {
+      this.editingProduct = null;
+      this.showAddProductForm = false;
     },
 
     // WhatsApp Integration
@@ -516,6 +627,30 @@ function app() {
 
         this.navigateTo("home");
       }, 1000);
+    },
+
+    handleAddProductForm(event) {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      
+      const productData = {
+        name: formData.get("name"),
+        price: formData.get("price"),
+        image: formData.get("image"),
+        category: formData.get("category"),
+        description: formData.get("description"),
+        stock: formData.get("stock"),
+      };
+
+      if (this.editingProduct) {
+        // Update existing product
+        this.updateProduct(this.editingProduct.id, productData);
+      } else {
+        // Add new product
+        this.addMerchantProduct(productData);
+      }
+      
+      event.target.reset();
     },
 
     // Search Functionality

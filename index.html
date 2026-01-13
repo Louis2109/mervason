@@ -178,40 +178,77 @@
             <div class="relative" x-data="{ open: false }">
               <button
                 @click="open = !open"
-                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
-                <i class="fas fa-user text-gray-600 dark:text-gray-400"></i>
+                <template x-if="!isLoggedIn">
+                  <div class="flex items-center space-x-2">
+                    <i class="fas fa-user-circle text-2xl text-gray-700 dark:text-gray-300"></i>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:block">Se connecter</span>
+                  </div>
+                </template>
+                <template x-if="isLoggedIn">
+                  <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center text-white font-semibold text-sm">
+                      <span x-text="currentUser?.firstName?.charAt(0).toUpperCase() + currentUser?.lastName?.charAt(0).toUpperCase()"></span>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:block" x-text="currentUser?.firstName"></span>
+                    <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                  </div>
+                </template>
               </button>
+
               <div
                 x-show="open"
                 @click.away="open = false"
-                class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50"
               >
-                <a
-                  href="#"
-                  class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  data-page="login"
-                  >Se connecter</a
-                >
-                <a
-                  href="#"
-                  class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  data-page="register"
-                  >S'inscrire</a
-                >
-                <hr class="my-2 border-gray-200 dark:border-gray-700" />
-                <a
-                  href="#"
-                  class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  data-page="account"
-                  >Mon compte</a
-                >
-                <a
-                  href="#"
-                  class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  data-page="merchant-subscribe"
-                  >Devenir marchand</a
-                >
+                <template x-if="!isLoggedIn">
+                  <div>
+                    <a
+                      href="#"
+                      class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      data-page="login"
+                      >Se connecter</a
+                    >
+                    <a
+                      href="#"
+                      class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      data-page="register"
+                      >S'inscrire</a
+                    >
+                  </div>
+                </template>
+                <template x-if="isLoggedIn">
+                  <div>
+                    <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                      <p class="text-sm font-semibold text-gray-900 dark:text-white" x-text="getMerchantName()"></p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400" x-text="currentUser?.email"></p>
+                    </div>
+                    <a
+                      href="#"
+                      class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      data-page="merchant-products"
+                    >
+                      <i class="fas fa-box mr-2"></i>Mes produits
+                    </a>
+                    <a
+                      href="#"
+                      class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      data-page="account"
+                    >
+                      <i class="fas fa-user mr-2"></i>Mon compte
+                    </a>
+                    <button
+                      @click="logout()"
+                      class="block w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                    </button>
+                  </div>
+                </template>
               </div>
             </div>
 
@@ -1091,7 +1128,7 @@
                   </a>
                 </p>
               </div>
-              <form class="mt-8 space-y-6">
+              <form class="mt-8 space-y-6" @submit.prevent="handleLoginForm">
                 <div class="space-y-4">
                   <div>
                     <label for="email" class="sr-only">Email</label>
@@ -1178,12 +1215,13 @@
                   </a>
                 </p>
               </div>
-              <form class="mt-8 space-y-6">
+              <form class="mt-8 space-y-6" @submit.prevent="handleRegisterForm">
                 <div class="space-y-4">
                   <div class="grid grid-cols-2 gap-4">
                     <div>
                       <input
                         type="text"
+                        name="firstName"
                         required
                         class="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                         placeholder="Prénom"
@@ -1192,6 +1230,7 @@
                     <div>
                       <input
                         type="text"
+                        name="lastName"
                         required
                         class="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                         placeholder="Nom"
@@ -1201,6 +1240,7 @@
                   <div>
                     <input
                       type="email"
+                      name="email"
                       required
                       class="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Adresse email"
@@ -1209,6 +1249,7 @@
                   <div>
                     <input
                       type="tel"
+                      name="phone"
                       required
                       class="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Numéro de téléphone"
@@ -1217,6 +1258,7 @@
                   <div>
                     <input
                       type="password"
+                      name="password"
                       required
                       class="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Mot de passe"
@@ -1225,6 +1267,7 @@
                   <div>
                     <input
                       type="password"
+                      name="confirmPassword"
                       required
                       class="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Confirmer le mot de passe"
@@ -2325,10 +2368,10 @@
           <!-- Add Product Form Modal -->
           <div
             x-show="showAddProductForm"
-            x-data="{ showAddProductForm: false }"
             x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100"
+            @click.self="cancelEditProduct()"
             class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
           >
             <div
@@ -2338,26 +2381,28 @@
                 <div class="flex justify-between items-center mb-6">
                   <h3
                     class="text-lg font-semibold text-gray-900 dark:text-white"
+                    x-text="editingProduct ? 'Modifier le produit' : 'Ajouter un produit'"
                   >
-                    Ajouter un produit
                   </h3>
                   <button
-                    @click="showAddProductForm = false"
+                    @click="cancelEditProduct()"
                     class="text-gray-500 hover:text-gray-700"
                   >
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
 
-                <form class="space-y-6">
+                <form @submit.prevent="handleAddProductForm" class="space-y-6">
                   <div>
                     <label
                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                       >Nom du produit</label
                     >
                     <input
+                      name="name"
                       type="text"
                       required
+                      :value="editingProduct?.name || ''"
                       class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg"
                     />
                   </div>
@@ -2367,7 +2412,9 @@
                       >Catégorie</label
                     >
                     <select
+                      name="category"
                       required
+                      :value="editingProduct?.category || ''"
                       class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg"
                     >
                       <option value="">Choisir une catégorie</option>
@@ -2384,8 +2431,11 @@
                         >Prix (FCFA)</label
                       >
                       <input
+                        name="price"
                         type="number"
                         required
+                        min="0"
+                        :value="editingProduct?.price || ''"
                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg"
                       />
                     </div>
@@ -2395,8 +2445,11 @@
                         >Quantité en stock</label
                       >
                       <input
+                        name="stock"
                         type="number"
                         required
+                        min="0"
+                        :value="editingProduct?.stock || ''"
                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg"
                       />
                     </div>
@@ -2407,46 +2460,39 @@
                       >Description</label
                     >
                     <textarea
+                      name="description"
                       rows="4"
+                      :value="editingProduct?.description || ''"
                       class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg"
                     ></textarea>
                   </div>
                   <div>
                     <label
                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                      >Images</label
+                      >URL Image (Imgur recommandé)</label
                     >
-                    <div
-                      class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center"
-                    >
-                      <i
-                        class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-4"
-                      ></i>
-                      <p class="text-gray-600 dark:text-gray-400">
-                        Glissez vos images ici ou
-                        <span class="text-primary-600 cursor-pointer"
-                          >parcourez</span
-                        >
-                      </p>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        class="hidden"
-                      />
-                    </div>
+                    <input
+                      name="image"
+                      type="url"
+                      placeholder="https://i.imgur.com/votre-image.jpg"
+                      :value="editingProduct?.image || ''"
+                      class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg"
+                    />
+                    <p class="text-xs text-gray-500 mt-1">
+                      Uploadez votre image sur Imgur.com et collez l'URL ici
+                    </p>
                   </div>
 
                   <div class="flex gap-4">
                     <button
                       type="button"
-                      @click="showAddProductForm = false"
+                      @click="cancelEditProduct()"
                       class="flex-1 btn-outline"
                     >
                       Annuler
                     </button>
                     <button type="submit" class="flex-1 btn-primary">
-                      Ajouter le produit
+                      <span x-text="editingProduct ? 'Mettre à jour' : 'Ajouter le produit'"></span>
                     </button>
                   </div>
                 </form>
@@ -2456,79 +2502,51 @@
 
           <!-- Products Grid -->
           <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Sample Product Cards -->
-            <div
-              class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1678685888221-cda773a3dcdb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                alt="iPhone 14 Pro Max"
-                class="w-full h-48 object-cover"
-              />
-              <div class="p-4">
-                <h3 class="font-semibold text-gray-900 dark:text-white mb-2">
-                  iPhone 14 Pro Max
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                  Smartphone Apple dernière génération
+            <template x-if="getMyProducts().length === 0">
+              <div class="col-span-full text-center py-12">
+                <i class="fas fa-box-open text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                <p class="text-gray-500 dark:text-gray-400 text-lg mb-4">
+                  Vous n'avez pas encore de produits
                 </p>
-                <div class="flex justify-between items-center mb-4">
-                  <span class="text-lg font-bold text-primary-600"
-                    >650,000 FCFA</span
-                  >
-                  <span class="text-sm text-gray-500">Stock: 5</span>
-                </div>
-                <div class="flex gap-2">
-                  <button class="flex-1 btn-primary-outline text-sm py-2">
-                    <i class="fas fa-edit mr-1"></i>
-                    Modifier
-                  </button>
-                  <button
-                    class="flex-1 btn-outline text-sm py-2 text-red-600 border-red-300 hover:bg-red-50"
-                  >
-                    <i class="fas fa-trash mr-1"></i>
-                    Supprimer
-                  </button>
-                </div>
+                <button @click="showAddProductForm = true" class="btn-primary">
+                  <i class="fas fa-plus mr-2"></i>
+                  Ajouter votre premier produit
+                </button>
               </div>
-            </div>
+            </template>
 
-            <!-- Repeat for more products -->
-            <div
-              class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1541807084-5c52b6b3adef?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                alt="MacBook Air M2"
-                class="w-full h-48 object-cover"
-              />
-              <div class="p-4">
-                <h3 class="font-semibold text-gray-900 dark:text-white mb-2">
-                  MacBook Air M2
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                  Ordinateur portable Apple avec puce M2
-                </p>
-                <div class="flex justify-between items-center mb-4">
-                  <span class="text-lg font-bold text-primary-600"
-                    >850,000 FCFA</span
-                  >
-                  <span class="text-sm text-gray-500">Stock: 3</span>
-                </div>
-                <div class="flex gap-2">
-                  <button class="flex-1 btn-primary-outline text-sm py-2">
-                    <i class="fas fa-edit mr-1"></i>
-                    Modifier
-                  </button>
-                  <button
-                    class="flex-1 btn-outline text-sm py-2 text-red-600 border-red-300 hover:bg-red-50"
-                  >
-                    <i class="fas fa-trash mr-1"></i>
-                    Supprimer
-                  </button>
+            <template x-for="product in getMyProducts()" :key="product.id">
+              <div
+                class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+              >
+                <img
+                  :src="product.image"
+                  :alt="product.name"
+                  class="w-full h-48 object-cover"
+                />
+                <div class="p-4">
+                  <h3 class="font-semibold text-gray-900 dark:text-white mb-2" x-text="product.name"></h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2" x-text="product.description"></p>
+                  <div class="flex justify-between items-center mb-4">
+                    <span class="text-lg font-bold text-primary-600" x-text="formatPrice(product.price)"></span>
+                    <span class="text-sm text-gray-500">Stock: <span x-text="product.stock"></span></span>
+                  </div>
+                  <div class="flex gap-2">
+                    <button @click="startEditProduct(product)" class="flex-1 btn-primary-outline text-sm py-2">
+                      <i class="fas fa-edit mr-1"></i>
+                      Modifier
+                    </button>
+                    <button
+                      @click="deleteProduct(product.id)"
+                      class="flex-1 btn-outline text-sm py-2 text-red-600 border-red-300 hover:bg-red-50"
+                    >
+                      <i class="fas fa-trash mr-1"></i>
+                      Supprimer
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </template>
           </div>
         </div>
       </div>
