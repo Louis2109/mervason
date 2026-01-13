@@ -64,14 +64,20 @@ function app() {
     allProducts: [],
 
     // Initialization
-    init() {
+    async init() {
       this.initializeTheme();
       this.applyTheme();
       this.initializeCart();
       this.setupNavigation();
-      this.loadMerchantProducts();
+      
+      // Vérifier session Supabase
+      await this.checkSupabaseSession();
+      
+      await this.loadMerchantProducts();
       this.loadAllProducts();
-      this.checkAuthStatus();
+      
+      // Listener pour changements auth
+      this.setupAuthListener();
     },
 
     // Theme Management
@@ -287,78 +293,159 @@ function app() {
     },
 
     login(email, password) {
-      // Simulate login - MVP sans DB
-      // En production : vérifier en base de données
-      if (email && password) {
-        // Chercher user existant (simulation)
-        // Pour MVP, on crée un user temporaire
-        const existingUser = this.loadFromStorage("users_" + email);
-        
-        if (existingUser) {
-          // User existe
-          this.currentUser = existingUser;
-        } else {
-          // Créer user temporaire (simulation MVP)
-          const userId = Date.now();
-          this.currentUser = {
-            id: userId,
-            email: email,
-            firstName: email.split("@")[0], // Extraire prénom de l'email
-            lastName: "User",
-            phone: "",
-            merchantId: `merchant_${userId}`,
-            role: "merchant",
-            createdAt: userId,
-          };
-          // Sauvegarder pour prochaine fois
-          this.saveToStorage("users_" + email, this.currentUser);
-        }
-        
-        localStorage.setItem("currentUser", JSON.stringify(this.currentUser));
+      return this.loginWithSupabase(email, password);
+    },
+
+    async loginWithSupabase(email, password) {
+      try {
+        // 1. Authentifier avec Supabase
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (authError) throw authError;
+
+        // 2. Récupérer le profil depuis la table users
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (userError) throw userError;
+
+        // 3. Mettre à jour currentUser
+        this.currentUser = {
+          id: userData.id,
+          email: userData.email,
+          firstName: userData.first_name,
+          lastName: userData.last_name,
+          phone: userData.phone,
+          merchantId: userData.merchant_id,
+          role: userData.role
+        };
+
         this.isLoggedIn = true;
         this.showToast("Connexion réussie", "success");
         this.navigateTo("home");
         return true;
+      } catch (error) {
+        console.error('Login error:', error);
+        this.showToast(error.message || "Email ou mot de passe incorrect", "error");
+        return false;
       }
-      this.showToast("Email ou mot de passe incorrect", "error");
-      return false;
     },
 
     register(userData) {
-      // Register user as merchant automatically
-      if (userData.email && userData.password) {
-        const userId = Date.now();
-        const merchantId = `merchant_${userId}`;
-        
+      return this.registerWithSupabase(userData);
+    },
+
+    async registerWithSupabase(userData) {
+      try {
+        if (!userData.email || !userData.password) {
+          this.showToast("Veuillez remplir tous les champs", "error");
+          return false;
+        }
+
+        // 1. Créer l'utilisateur dans Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: userData.email,
+          password: userData.password,
+        });
+
+        if (authError) throw authError;
+
+        // 2. Créer le profil marchand dans la table users
+        const merchantId = `merchant_${Date.now()}`;
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert([{
+            id: authData.user.id,
+            email: userData.email,
+            first_name: userData.firstName,
+            last_name: userData.lastName,
+            phone: userData.phone,
+            merchant_id: merchantId,
+            role: 'merchant'
+          }]);
+
+        if (insertError) throw insertError;
+
+        // 3. Mettre à jour currentUser local
         this.currentUser = {
-          id: userId,
+          id: authData.user.id,
           email: userData.email,
           firstName: userData.firstName,
           lastName: userData.lastName,
           phone: userData.phone,
           merchantId: merchantId,
-          role: "merchant", // Auto-merchant pour MVP
-          createdAt: userId,
+          role: 'merchant'
         };
-        
-        localStorage.setItem("currentUser", JSON.stringify(this.currentUser));
+
         this.isLoggedIn = true;
         this.showToast("Compte créé avec succès ! Vous pouvez maintenant poster des produits.", "success");
-        
-        // Redirect vers dashboard marchands
         this.navigateTo("merchant-products");
         return true;
+      } catch (error) {
+        console.error('Registration error:', error);
+        this.showToast(error.message || "Erreur lors de l'inscription", "error");
+        return false;
       }
-      this.showToast("Veuillez remplir tous les champs", "error");
-      return false;
     },
 
-    logout() {
+    async logout() {
+      await supabase.auth.signOut();
       this.currentUser = null;
       this.isLoggedIn = false;
-      localStorage.removeItem("currentUser");
       this.showToast("Déconnexion réussie", "info");
       this.navigateTo("home");
+    },
+
+    // ========== SUPABASE SESSION MANAGEMENT ==========
+    
+    async checkSupabaseSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // User est connecté, récupérer son profil
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (userData && !error) {
+            this.currentUser = {
+              id: userData.id,
+              email: userData.email,
+              firstName: userData.first_name,
+              lastName: userData.last_name,
+              phone: userData.phone,
+              merchantId: userData.merchant_id,
+              role: userData.role
+            };
+            this.isLoggedIn = true;
+            console.log('✅ Session restaurée:', this.currentUser.email);
+          }
+        } else {
+          this.currentUser = null;
+          this.isLoggedIn = false;
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+      }
+    },
+
+    setupAuthListener() {
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+          this.currentUser = null;
+          this.isLoggedIn = false;
+          this.navigateTo('home');
+        }
+      });
     },
 
     // Merchant Actions
@@ -399,15 +486,44 @@ function app() {
 
     // ========== CRUD PRODUCTS ==========
     
-    // Load merchant products from localStorage
-    loadMerchantProducts() {
-      const stored = localStorage.getItem("merchantProducts");
-      this.merchantProducts = stored ? JSON.parse(stored) : [];
+    // Load merchant products from Supabase
+    async loadMerchantProducts() {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Convertir format Supabase → format App
+        this.merchantProducts = data.map(p => ({
+          id: p.id,
+          merchantId: p.merchant_id,
+          merchantName: p.merchant_name || 'Marchand',
+          name: p.name,
+          price: parseFloat(p.price),
+          image: p.image,
+          category: p.category,
+          description: p.description,
+          stock: p.stock,
+          status: p.status,
+          vendor: p.merchant_name || 'Marchand',
+          rating: parseFloat(p.rating) || 0,
+          reviews: p.reviews || 0,
+          createdAt: new Date(p.created_at).getTime(),
+          updatedAt: new Date(p.updated_at).getTime()
+        }));
+        
+        console.log(`✅ ${this.merchantProducts.length} produits chargés depuis Supabase`);
+      } catch (error) {
+        console.error('Load products error:', error);
+        this.merchantProducts = [];
+      }
     },
 
-    // Save merchant products to localStorage
+    // Save merchant products (obsolète avec Supabase - gardé pour compatibilité)
     saveMerchantProducts() {
-      localStorage.setItem("merchantProducts", JSON.stringify(this.merchantProducts));
       this.loadAllProducts(); // Refresh merged products
     },
 
@@ -421,88 +537,145 @@ function app() {
 
     // Add new merchant product
     addMerchantProduct(productData) {
+      return this.addProductToSupabase(productData);
+    },
+
+    async addProductToSupabase(productData) {
       if (!this.isMerchant()) {
         this.showToast("Vous devez être marchand pour ajouter des produits", "error");
         return false;
       }
 
-      const productId = `prod_${Date.now()}`;
-      const newProduct = {
-        id: productId,
-        merchantId: this.currentUser.merchantId,
-        merchantName: this.getMerchantName(),
-        name: productData.name,
-        price: parseFloat(productData.price),
-        image: productData.image || "https://via.placeholder.com/400",
-        category: productData.category,
-        description: productData.description,
-        stock: parseInt(productData.stock) || 0,
-        status: "active",
-        vendor: this.getMerchantName(),
-        rating: 0,
-        reviews: 0,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .insert([{
+            merchant_id: this.currentUser.merchantId,
+            merchant_name: this.getMerchantName(),
+            name: productData.name,
+            price: parseFloat(productData.price),
+            image: productData.image || 'https://via.placeholder.com/400',
+            category: productData.category,
+            description: productData.description,
+            stock: parseInt(productData.stock) || 0,
+            status: 'active',
+            rating: 0,
+            reviews: 0
+          }])
+          .select()
+          .single();
 
-      this.merchantProducts.push(newProduct);
-      this.saveMerchantProducts();
-      this.showToast("Produit ajouté avec succès", "success");
-      this.showAddProductForm = false;
-      return true;
+        if (error) throw error;
+
+        // Ajouter au state local
+        this.merchantProducts.push({
+          id: data.id,
+          merchantId: data.merchant_id,
+          merchantName: data.merchant_name,
+          name: data.name,
+          price: parseFloat(data.price),
+          image: data.image,
+          category: data.category,
+          description: data.description,
+          stock: data.stock,
+          status: data.status,
+          vendor: data.merchant_name,
+          rating: 0,
+          reviews: 0,
+          createdAt: new Date(data.created_at).getTime(),
+          updatedAt: new Date(data.updated_at).getTime()
+        });
+
+        this.loadAllProducts();
+        this.showToast("Produit ajouté avec succès", "success");
+        this.showAddProductForm = false;
+        return true;
+      } catch (error) {
+        console.error('Add product error:', error);
+        this.showToast(error.message || "Erreur lors de l'ajout", "error");
+        return false;
+      }
     },
 
     // Update existing product
     updateProduct(productId, updatedData) {
-      const index = this.merchantProducts.findIndex((p) => p.id === productId);
-      
-      if (index === -1) {
-        this.showToast("Produit introuvable", "error");
+      return this.updateProductInSupabase(productId, updatedData);
+    },
+
+    async updateProductInSupabase(productId, updatedData) {
+      try {
+        const { error } = await supabase
+          .from('products')
+          .update({
+            name: updatedData.name,
+            price: parseFloat(updatedData.price),
+            image: updatedData.image,
+            category: updatedData.category,
+            description: updatedData.description,
+            stock: parseInt(updatedData.stock),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', productId)
+          .eq('merchant_id', this.currentUser.merchantId); // Sécurité RLS
+
+        if (error) throw error;
+
+        // Mettre à jour le state local
+        const index = this.merchantProducts.findIndex(p => p.id === productId);
+        if (index > -1) {
+          this.merchantProducts[index] = {
+            ...this.merchantProducts[index],
+            name: updatedData.name,
+            price: parseFloat(updatedData.price),
+            image: updatedData.image,
+            category: updatedData.category,
+            description: updatedData.description,
+            stock: parseInt(updatedData.stock),
+            updatedAt: Date.now()
+          };
+        }
+
+        this.loadAllProducts();
+        this.showToast("Produit mis à jour avec succès", "success");
+        this.editingProduct = null;
+        this.showAddProductForm = false;
+        return true;
+      } catch (error) {
+        console.error('Update product error:', error);
+        this.showToast("Erreur lors de la mise à jour", "error");
         return false;
       }
-
-      const product = this.merchantProducts[index];
-      
-      if (!this.canEditProduct(product)) {
-        this.showToast("Vous ne pouvez pas modifier ce produit", "error");
-        return false;
-      }
-
-      this.merchantProducts[index] = {
-        ...product,
-        ...updatedData,
-        updatedAt: Date.now(),
-      };
-
-      this.saveMerchantProducts();
-      this.showToast("Produit mis à jour avec succès", "success");
-      this.editingProduct = null;
-      this.showAddProductForm = false;
-      return true;
     },
 
     // Delete product
     deleteProduct(productId) {
-      const product = this.merchantProducts.find((p) => p.id === productId);
-      
-      if (!product) {
-        this.showToast("Produit introuvable", "error");
+      return this.deleteProductFromSupabase(productId);
+    },
+
+    async deleteProductFromSupabase(productId) {
+      if (!confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) {
         return false;
       }
 
-      if (!this.canEditProduct(product)) {
-        this.showToast("Vous ne pouvez pas supprimer ce produit", "error");
-        return false;
-      }
+      try {
+        const { error } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', productId)
+          .eq('merchant_id', this.currentUser.merchantId); // Sécurité RLS
 
-      if (confirm(`Êtes-vous sûr de vouloir supprimer "${product.name}" ?`)) {
-        this.merchantProducts = this.merchantProducts.filter((p) => p.id !== productId);
-        this.saveMerchantProducts();
+        if (error) throw error;
+
+        // Retirer du state local
+        this.merchantProducts = this.merchantProducts.filter(p => p.id !== productId);
+        this.loadAllProducts();
         this.showToast("Produit supprimé avec succès", "success");
         return true;
+      } catch (error) {
+        console.error('Delete product error:', error);
+        this.showToast("Erreur lors de la suppression", "error");
+        return false;
       }
-      
-      return false;
     },
 
     // Start editing product
