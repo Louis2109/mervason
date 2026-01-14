@@ -298,27 +298,13 @@ function app() {
 
     async loginWithSupabase(email, password) {
       try {
-        // Validation côté client
-        if (!this.isValidEmail(email)) {
-          this.showToast("Adresse email invalide", "error");
-          return false;
-        }
-
-        if (password.length < 6) {
-          this.showToast("Le mot de passe doit contenir au moins 6 caractères", "error");
-          return false;
-        }
-
         // 1. Authentifier avec Supabase
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email,
           password
         });
 
-        if (authError) {
-          this.showToast(`Erreur de connexion: ${authError.message}`, "error");
-          throw authError;
-        }
+        if (authError) throw authError;
 
         // 2. Récupérer le profil depuis la table users
         const { data: userData, error: userError } = await supabase
@@ -357,26 +343,6 @@ function app() {
 
     async registerWithSupabase(userData) {
       try {
-        // Validation côté client
-        if (!this.isValidEmail(userData.email)) {
-          this.showToast("Adresse email invalide", "error");
-          return false;
-        }
-
-        if (userData.password.length < 6) {
-          this.showToast("Le mot de passe doit contenir au moins 6 caractères", "error");
-          return false;
-        }
-
-        if (!userData.firstName || !userData.lastName) {
-          this.showToast("Nom et prénom requis", "error");
-          return false;
-        }
-
-        // Sanitize inputs
-        userData.firstName = this.sanitizeInput(userData.firstName);
-        userData.lastName = this.sanitizeInput(userData.lastName);
-        userData.email = this.sanitizeInput(userData.email);
         if (!userData.email || !userData.password) {
           this.showToast("Veuillez remplir tous les champs", "error");
           return false;
@@ -534,7 +500,6 @@ function app() {
         this.merchantProducts = data.map(p => ({
           id: p.id,
           merchantId: p.merchant_id,
-          merchantName: p.merchant_name || 'Marchand',
           name: p.name,
           price: parseFloat(p.price),
           image: p.image,
@@ -542,7 +507,7 @@ function app() {
           description: p.description,
           stock: p.stock,
           status: p.status,
-          vendor: p.merchant_name || 'Marchand',
+          vendor: 'Marchand', // On récupérera le nom du marchand plus tard si nécessaire
           rating: parseFloat(p.rating) || 0,
           reviews: p.reviews || 0,
           createdAt: new Date(p.created_at).getTime(),
@@ -587,7 +552,7 @@ function app() {
             merchant_id: this.currentUser.merchantId,
             name: productData.name,
             price: parseFloat(productData.price),
-            image: productData.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400',
+            image: productData.image || 'https://via.placeholder.com/400',
             category: productData.category,
             description: productData.description,
             stock: parseInt(productData.stock) || 0,
@@ -604,7 +569,6 @@ function app() {
         this.merchantProducts.push({
           id: data.id,
           merchantId: data.merchant_id,
-          merchantName: data.merchant_name,
           name: data.name,
           price: parseFloat(data.price),
           image: data.image,
@@ -612,7 +576,7 @@ function app() {
           description: data.description,
           stock: data.stock,
           status: data.status,
-          vendor: data.merchant_name,
+          vendor: this.getMerchantName(),
           rating: 0,
           reviews: 0,
           createdAt: new Date(data.created_at).getTime(),
@@ -783,6 +747,60 @@ function app() {
       this.register(userData);
     },
 
+    async handleUpdateProfile(event) {
+      event.preventDefault();
+      
+      if (!this.isLoggedIn) {
+        this.showToast("Vous devez être connecté", "error");
+        return;
+      }
+
+      const formData = new FormData(event.target);
+      const updatedData = {
+        firstName: formData.get("firstName"),
+        lastName: formData.get("lastName"),
+        phone: formData.get("phone"),
+      };
+
+      // Validation
+      if (!updatedData.firstName || !updatedData.lastName || !updatedData.phone) {
+        this.showToast("Veuillez remplir tous les champs", "error");
+        return;
+      }
+
+      try {
+        // UPDATE Supabase
+        const { error } = await supabase
+          .from('users')
+          .update({
+            first_name: updatedData.firstName,
+            last_name: updatedData.lastName,
+            phone: updatedData.phone
+          })
+          .eq('id', this.currentUser.id);
+
+        if (error) throw error;
+
+        // Mettre à jour currentUser state
+        this.currentUser = {
+          ...this.currentUser,
+          firstName: updatedData.firstName,
+          lastName: updatedData.lastName,
+          phone: updatedData.phone
+        };
+
+        // Sync localStorage (optionnel mais recommandé)
+        localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+
+        this.showToast("Profil mis à jour avec succès", "success");
+        return true;
+      } catch (error) {
+        console.error('Update profile error:', error);
+        this.showToast(error.message || "Erreur lors de la mise à jour", "error");
+        return false;
+      }
+    },
+
     handleContactForm(event) {
       event.preventDefault();
       const formData = new FormData(event.target);
@@ -887,15 +905,8 @@ function app() {
     },
 
     isValidEmail(email) {
-      // Validation email plus stricte
-      const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return emailRegex.test(email);
-    },
-
-    // Sanitize input pour éviter XSS
-    sanitizeInput(input) {
-      if (typeof input !== 'string') return input;
-      return input.trim().replace(/[<>"']/g, '');
     },
 
     // Loading States

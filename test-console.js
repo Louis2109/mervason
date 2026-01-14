@@ -18,8 +18,7 @@
 // ═══════════════════════════════════════════════════════════
 
 const TEST_CONFIG = {
-  // Utiliser un domaine email VALIDE (Gmail, Yahoo, etc.)
-  testEmail: `mervason.test.${Date.now()}@gmail.com`,
+  testEmail: `test_${Date.now()}@mervason.cm`,
   testPassword: "Test@123456",
   testUser: {
     firstName: "Test",
@@ -226,12 +225,17 @@ async function testCRUDProducts() {
       return results;
     }
 
-    // Récupérer merchantId
-    const { data: userProfile } = await supabase
+    // Récupérer merchantId (utiliser snake_case pour Supabase)
+    const { data: userProfile, error: profileError } = await supabase
       .from('users')
-      .select('merchantId')
+      .select('*')  // ✅ Utiliser '*' comme l'app (Supabase convertit en camelCase)
       .eq('id', loginData.user.id)
       .single();
+
+    if (profileError) {
+      log.error(`Erreur récupération profil: ${profileError.message}`);
+      return results;
+    }
 
     merchantId = userProfile?.merchantId;
     
