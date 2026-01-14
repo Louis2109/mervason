@@ -15,8 +15,8 @@
     />
     <link rel="stylesheet" href="styles.css" />
     
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase SDK
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> -->
     
     <script>
       tailwind.config = {
@@ -2699,6 +2699,8 @@
       </div>
     </div>
 
+    <!-- Supabase SDK - DOIT être chargé AVANT supabase-config.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
     <script src="supabase-config.js"></script>
     <script src="script.js"></script>
   </body>

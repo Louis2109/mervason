@@ -298,13 +298,27 @@ function app() {
 
     async loginWithSupabase(email, password) {
       try {
+        // Validation côté client
+        if (!this.isValidEmail(email)) {
+          this.showToast("Adresse email invalide", "error");
+          return false;
+        }
+
+        if (password.length < 6) {
+          this.showToast("Le mot de passe doit contenir au moins 6 caractères", "error");
+          return false;
+        }
+
         // 1. Authentifier avec Supabase
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email,
           password
         });
 
-        if (authError) throw authError;
+        if (authError) {
+          this.showToast(`Erreur de connexion: ${authError.message}`, "error");
+          throw authError;
+        }
 
         // 2. Récupérer le profil depuis la table users
         const { data: userData, error: userError } = await supabase
@@ -343,6 +357,26 @@ function app() {
 
     async registerWithSupabase(userData) {
       try {
+        // Validation côté client
+        if (!this.isValidEmail(userData.email)) {
+          this.showToast("Adresse email invalide", "error");
+          return false;
+        }
+
+        if (userData.password.length < 6) {
+          this.showToast("Le mot de passe doit contenir au moins 6 caractères", "error");
+          return false;
+        }
+
+        if (!userData.firstName || !userData.lastName) {
+          this.showToast("Nom et prénom requis", "error");
+          return false;
+        }
+
+        // Sanitize inputs
+        userData.firstName = this.sanitizeInput(userData.firstName);
+        userData.lastName = this.sanitizeInput(userData.lastName);
+        userData.email = this.sanitizeInput(userData.email);
         if (!userData.email || !userData.password) {
           this.showToast("Veuillez remplir tous les champs", "error");
           return false;
@@ -551,10 +585,9 @@ function app() {
           .from('products')
           .insert([{
             merchant_id: this.currentUser.merchantId,
-            merchant_name: this.getMerchantName(),
             name: productData.name,
             price: parseFloat(productData.price),
-            image: productData.image || 'https://via.placeholder.com/400',
+            image: productData.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400',
             category: productData.category,
             description: productData.description,
             stock: parseInt(productData.stock) || 0,
@@ -854,8 +887,15 @@ function app() {
     },
 
     isValidEmail(email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      // Validation email plus stricte
+      const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       return emailRegex.test(email);
+    },
+
+    // Sanitize input pour éviter XSS
+    sanitizeInput(input) {
+      if (typeof input !== 'string') return input;
+      return input.trim().replace(/[<>"']/g, '');
     },
 
     // Loading States
