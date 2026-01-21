@@ -496,10 +496,10 @@
                       </div>
                     </div>
                     <button
-                      class="w-full mt-3 border-2 border-orange-500 text-orange-600 dark:text-orange-400 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-orange-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 text-sm"
-                      @click.stop="addToCart(product)"
+                      class="w-full mt-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 text-sm"
+                      @click.stop="navigateTo('shop')"
                     >
-                      Ajouter au panier
+                      Voir tous les produits
                     </button>
                   </div>
                 </div>
@@ -737,8 +737,7 @@
                   <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
                     Tous les produits
                   </h1>
-                  <p class="text-gray-600 dark:text-gray-300">
-                    124 produits trouvés
+                  <p class="text-gray-600 dark:text-gray-300" x-text="`${allProducts.length} produit(s) trouvé(s)`">
                   </p>
                 </div>
                 <div class="flex items-center gap-4">
@@ -766,8 +765,28 @@
               <!-- Products Grid -->
               <div
                 class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
-                x-init="loadAllProducts()"
               >
+                <!-- Message si aucun produit -->
+                <template x-if="allProducts.length === 0">
+                  <div class="col-span-full text-center py-12">
+                    <i class="fas fa-box-open text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                      Aucun produit disponible
+                    </h3>
+                    <p class="text-gray-500 dark:text-gray-500 mb-4">
+                      Les produits apparaitront ici une fois ajoutés par les marchands
+                    </p>
+                    <button 
+                      @click="navigateTo('merchant-products')" 
+                      class="btn-primary"
+                      x-show="isLoggedIn"
+                    >
+                      Ajouter mon premier produit
+                    </button>
+                  </div>
+                </template>
+                
+                <!-- Liste des produits -->
                 <template x-for="product in allProducts" :key="product.id">
                   <div
                     class="product-card group cursor-pointer"
@@ -818,9 +837,10 @@
                       </div>
                       <button
                         class="w-full border-2 border-orange-500 text-orange-600 dark:text-orange-400 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-orange-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 text-sm"
-                        @click.stop="addToCart(product)"
+                        @click.stop="buyNow(product)"
                       >
-                        Ajouter au panier
+                        <i class="fas fa-shopping-bag mr-2"></i>
+                        Acheter maintenant
                       </button>
                     </div>
                   </div>
@@ -1284,24 +1304,13 @@
                     <div>
                       <label
                         class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                        >Email *</label
-                      >
-                      <input
-                        type="email"
-                        name="email"
-                        required
-                        class="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                         >Téléphone *</label
                       >
                       <input
                         type="tel"
                         name="phone"
                         required
+                        placeholder="+237 6XX XX XX XX"
                         class="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg"
                       />
                     </div>
@@ -1337,94 +1346,30 @@
                   </div>
                 </div>
 
-                <!-- Payment Method -->
+                <!-- Info Paiement WhatsApp -->
                 <div
-                  class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
+                  class="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800"
                 >
-                  <h3
-                    class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
-                  >
-                    Mode de paiement
-                  </h3>
-                  <div class="space-y-4">
-                    <label
-                      class="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="orange-money"
-                        class="mr-3"
-                      />
-                      <div class="flex items-center">
-                        <div
-                          class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mr-3"
-                        >
-                          <span class="text-white text-xs font-bold">OM</span>
-                        </div>
-                        <span class="font-medium">Orange Money</span>
-                      </div>
-                    </label>
-
-                    <label
-                      class="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="momo"
-                        class="mr-3"
-                      />
-                      <div class="flex items-center">
-                        <div
-                          class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center mr-3"
-                        >
-                          <span class="text-white text-xs font-bold">MM</span>
-                        </div>
-                        <span class="font-medium">Mobile Money (MTN)</span>
-                      </div>
-                    </label>
-
-                    <label
-                      class="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="visa"
-                        class="mr-3"
-                      />
-                      <div class="flex items-center">
-                        <i
-                          class="fab fa-cc-visa text-2xl text-blue-600 mr-3"
-                        ></i>
-                        <span class="font-medium">Carte Visa</span>
-                      </div>
-                    </label>
-
-                    <label
-                      class="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="whatsapp"
-                        class="mr-3"
-                      />
-                      <div class="flex items-center">
-                        <i
-                          class="fab fa-whatsapp text-2xl text-green-500 mr-3"
-                        ></i>
-                        <span class="font-medium">Paiement via WhatsApp</span>
-                      </div>
-                    </label>
+                  <div class="flex items-start">
+                    <i class="fab fa-whatsapp text-green-500 text-2xl mr-3 mt-1"></i>
+                    <div>
+                      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        Paiement via WhatsApp
+                      </h3>
+                      <p class="text-sm text-gray-600 dark:text-gray-300">
+                        Après validation, vous serez redirigé vers WhatsApp pour convenir du mode de paiement directement avec le marchand (Mobile Money, Espèces, etc.)
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <button type="submit" class="w-full btn-primary text-lg py-4">
-                  Confirmer la commande
-                  <i class="fas fa-credit-card ml-2"></i>
+                <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                  <i class="fab fa-whatsapp mr-2 text-xl"></i>
+                  Finaliser via WhatsApp
                 </button>
+                <p class="text-xs text-center text-gray-500 mt-2">
+                  Vous serez redirigé vers WhatsApp pour finaliser avec le vendeur
+                </p>
               </form>
             </div>
 
@@ -1439,59 +1384,69 @@
                   Résumé de la commande
                 </h3>
 
-                <div
-                  class="space-y-4 mb-6"
-                  x-data="{ cart: JSON.parse(localStorage.getItem('cart')) || [] }"
-                >
-                  <template x-for="item in cart" :key="item.id">
+                <!-- Produit unique -->
+                <template x-if="currentCheckoutProduct">
+                  <div class="space-y-4 mb-6">
                     <div class="flex items-center space-x-3">
                       <img
-                        :src="item.image"
-                        :alt="item.name"
-                        class="w-12 h-12 object-cover rounded-lg"
+                        :src="currentCheckoutProduct.image"
+                        :alt="currentCheckoutProduct.name"
+                        class="w-16 h-16 object-cover rounded-lg"
                       />
                       <div class="flex-1">
                         <h4
                           class="text-sm font-medium text-gray-900 dark:text-white"
-                          x-text="item.name"
+                          x-text="currentCheckoutProduct.name"
                         ></h4>
-                        <p class="text-sm text-gray-500">
-                          Qté: <span x-text="item.quantity"></span>
-                        </p>
+                        <p class="text-xs text-gray-500" x-text="currentCheckoutProduct.vendor"></p>
                       </div>
-                      <span
-                        class="text-sm font-semibold text-gray-900 dark:text-white"
-                        x-text="(item.price * item.quantity).toLocaleString() + ' FCFA'"
-                      ></span>
                     </div>
-                  </template>
-                </div>
+                    
+                    <!-- Infos Marchand VISIBLES -->
+                    <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <div class="flex items-center mb-2">
+                        <i class="fas fa-store text-orange-600 mr-2"></i>
+                        <span class="font-semibold text-gray-900 dark:text-white text-sm">Vendeur</span>
+                      </div>
+                      <p class="text-sm text-gray-700 dark:text-gray-300 mb-2" x-text="currentMerchant?.business_name || currentCheckoutProduct.vendor"></p>
+                      
+                      <div class="flex items-center bg-white dark:bg-gray-800 p-2 rounded border border-orange-300">
+                        <i class="fab fa-whatsapp text-green-500 text-xl mr-2"></i>
+                        <div class="flex-1">
+                          <p class="text-xs text-gray-500">Numéro WhatsApp</p>
+                          <p class="font-bold text-gray-900 dark:text-white" x-text="currentMerchant?.phone || currentCheckoutProduct.merchantPhone"></p>
+                        </div>
+                      </div>
+                      <p class="text-xs text-gray-500 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        En cas de problème, contactez directement ce numéro
+                      </p>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Message si pas de produit -->
+                <template x-if="!currentCheckoutProduct">
+                  <div class="text-center py-8">
+                    <i class="fas fa-shopping-bag text-gray-300 text-4xl mb-2"></i>
+                    <p class="text-gray-500">Aucun produit sélectionné</p>
+                  </div>
+                </template>
 
                 <div
                   class="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3"
+                  x-show="currentCheckoutProduct"
                 >
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600 dark:text-gray-300"
-                      >Sous-total</span
-                    >
-                    <span
-                      x-text="getCartTotal().toLocaleString() + ' FCFA'"
-                    ></span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600 dark:text-gray-300"
-                      >Livraison</span
-                    >
-                    <span>2,000 FCFA</span>
-                  </div>
-                  <div
-                    class="flex justify-between text-lg font-semibold text-gray-900 dark:text-white border-t border-gray-200 dark:border-gray-700 pt-3"
-                  >
+                  <div class="flex justify-between text-lg font-semibold text-gray-900 dark:text-white">
                     <span>Total</span>
                     <span
-                      x-text="(getCartTotal() + 2000).toLocaleString() + ' FCFA'"
+                      class="text-primary-600"
+                      x-text="currentCheckoutProduct ? formatPrice(currentCheckoutProduct.price) : '0 FCFA'"
                     ></span>
                   </div>
+                  <p class="text-xs text-gray-500 text-center">
+                    Le paiement se fera directement avec le marchand via WhatsApp
+                  </p>
                 </div>
               </div>
             </div>
@@ -2697,6 +2652,7 @@
     <!-- Supabase SDK - DOIT être chargé AVANT supabase-config.js -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
     <script src="supabase-config.js"></script>
+    <script src="test-database.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

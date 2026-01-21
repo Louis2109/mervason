@@ -13,6 +13,8 @@ function app() {
     merchantProducts: [],
     showAddProductForm: false,
     editingProduct: null,
+    currentCheckoutProduct: null, // Produit sélectionné pour achat
+    currentMerchant: null, // Info merchant du produit
     toast: {
       show: false,
       message: "",
@@ -65,6 +67,8 @@ function app() {
 
     // Initialization
     async init() {
+      console.log('🚀 [INIT] Démarrage application...');
+      
       this.initializeTheme();
       this.applyTheme();
       this.initializeCart();
@@ -73,11 +77,13 @@ function app() {
       // Vérifier session Supabase
       await this.checkSupabaseSession();
       
+      // IMPORTANT: Charger les produits AVANT tout (pour visiteurs)
       await this.loadMerchantProducts();
-      this.loadAllProducts();
       
       // Listener pour changements auth
       this.setupAuthListener();
+      
+      console.log('✅ [INIT] Application prête');
     },
 
     // Theme Management
@@ -183,16 +189,15 @@ function app() {
 
     // Product Management
     loadFeaturedProducts() {
-      // Simulate API call
-      setTimeout(() => {
-        this.products = this.featuredProducts;
-      }, 100);
+      // Charger uniquement les samples pour la page home
+      this.products = this.featuredProducts;
     },
 
     loadAllProducts() {
-      // Merger les produits samples et marchands
-      this.allProducts = [...this.featuredProducts, ...this.merchantProducts];
+      // Pour la page SHOP: afficher SEULEMENT les produits marchands (pas les samples)
+      this.allProducts = [...this.merchantProducts];
       this.products = this.allProducts;
+      console.log('📦 [PRODUCTS] Produits chargés pour shop:', this.allProducts.length);
     },
 
     loadCurrentProduct() {
@@ -276,14 +281,26 @@ function app() {
 
     // Purchase Actions
     buyNow(product) {
-      // Clear cart and add single product
-      this.cart = [
-        {
-          ...product,
-          quantity: 1,
-        },
-      ];
-      this.updateCart();
+      console.log('🛒 [BUY] Achat:', product.name);
+      
+      // Vérifier si c'est un sample product (pas de merchantId)
+      if (!product.merchantId) {
+        console.log('⚠️  [BUY] Sample product - redirect shop');
+        this.showToast('Ceci est un exemple. Découvrez nos vrais produits !', 'info');
+        this.navigateTo('shop');
+        return;
+      }
+      
+      // Stocker produit pour checkout
+      this.currentCheckoutProduct = product;
+      this.currentMerchant = {
+        phone: product.merchantPhone,
+        business_name: product.vendor
+      };
+      
+      console.log('📱 [BUY] Merchant phone:', product.merchantPhone);
+      
+      // Naviguer checkout
       this.navigateTo("checkout");
     },
 
@@ -348,45 +365,77 @@ function app() {
           return false;
         }
 
+        console.log('🔵 [REGISTER] Tentative inscription:', userData.email);
+
         // 1. Créer l'utilisateur dans Supabase Auth
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: userData.email,
           password: userData.password,
+          options: {
+            data: {
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              phone: userData.phone,
+            },
+          },
         });
 
         if (authError) throw authError;
 
-        // 2. Créer le profil marchand dans la table users
-        const merchantId = `merchant_${Date.now()}`;
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert([{
-            id: authData.user.id,
-            email: userData.email,
-            first_name: userData.firstName,
-            last_name: userData.lastName,
-            phone: userData.phone,
-            merchant_id: merchantId,
-            role: 'merchant'
-          }]);
+        console.log('✅ [REGISTER] User créé:', authData.user.id);
 
-        if (insertError) throw insertError;
+        // 2. NOUVEAU: Créer automatiquement le profil merchant
+        if (authData.user) {
+          console.log('🏪 [REGISTER] Création profil merchant...');
+          
+          const { data: merchantProfile, error: merchantError } = await supabase
+            .from('merchant_profiles')
+            .insert({
+              user_id: authData.user.id,
+              phone: userData.phone,
+              business_name: `${userData.firstName} ${userData.lastName}`,
+            })
+            .select()
+            .single();
+
+          if (merchantError) {
+            console.error('❌ [REGISTER] Erreur profil merchant:', merchantError);
+            // Ne pas bloquer l'inscription si le profil échoue
+          } else {
+            console.log('✅ [REGISTER] Profil merchant créé:', merchantProfile.id);
+            
+            // Stocker merchantId pour utilisation future
+            this.currentUser = {
+              id: authData.user.id,
+              email: userData.email,
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              phone: userData.phone,
+              merchantId: merchantProfile.id,
+              role: 'merchant'
+            };
+          }
+        }
 
         // 3. Mettre à jour currentUser local
-        this.currentUser = {
-          id: authData.user.id,
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          phone: userData.phone,
-          merchantId: merchantId,
-          role: 'merchant'
-        };
+        if (!this.currentUser) {
+          this.currentUser = {
+            id: authData.user.id,
+            email: userData.email,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            phone: userData.phone,
+            role: 'merchant'
+          };
+        }
 
         this.isLoggedIn = true;
+        localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+        
         this.showToast("Compte créé avec succès ! Vous pouvez maintenant poster des produits.", "success");
         this.navigateTo("merchant-products");
         return true;
+        
       } catch (error) {
         console.error('Registration error:', error);
         this.showToast(error.message || "Erreur lors de l'inscription", "error");
@@ -486,15 +535,32 @@ function app() {
 
     // ========== CRUD PRODUCTS ==========
     
-    // Load merchant products from Supabase
+    // Load merchant products from Supabase avec jointure merchant_profiles
     async loadMerchantProducts() {
       try {
+        console.log('🔄 [PRODUCTS] Chargement produits depuis Supabase...');
         const { data, error } = await supabase
           .from('products')
-          .select('*')
+          .select(`
+            *,
+            merchant_profiles!inner (
+              phone,
+              business_name,
+              user_id
+            )
+          `)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
+
+        console.log('📦 [PRODUCTS] Data reçue de Supabase:', data ? data.length : 0);
+        
+        if (!data || data.length === 0) {
+          console.log('⚠️  [PRODUCTS] Aucun produit dans la BD');
+          this.merchantProducts = [];
+          this.loadAllProducts();
+          return;
+        }
 
         // Convertir format Supabase → format App
         this.merchantProducts = data.map(p => ({
@@ -502,19 +568,28 @@ function app() {
           merchantId: p.merchant_id,
           name: p.name,
           price: parseFloat(p.price),
-          image: p.image,
+          image: p.image_url || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop',
           category: p.category,
           description: p.description,
           stock: p.stock,
-          status: p.status,
-          vendor: 'Marchand', // On récupérera le nom du marchand plus tard si nécessaire
-          rating: parseFloat(p.rating) || 0,
-          reviews: p.reviews || 0,
-          createdAt: new Date(p.created_at).getTime(),
-          updatedAt: new Date(p.updated_at).getTime()
+          vendor: p.merchant_profiles?.business_name || 'Marchand',
+          merchantPhone: p.merchant_profiles?.phone || '+237000000000',
+          rating: 4.5,
+          reviews: Math.floor(Math.random() * 50) + 10,
+          createdAt: p.created_at,
         }));
         
-        console.log(`✅ ${this.merchantProducts.length} produits chargés depuis Supabase`);
+        console.log(`✅ [PRODUCTS] ${this.merchantProducts.length} produits chargés`);
+        if (this.merchantProducts.length > 0) {
+          console.log('📱 [PRODUCTS] Exemple produit:', {
+            name: this.merchantProducts[0].name,
+            vendor: this.merchantProducts[0].vendor,
+            phone: this.merchantProducts[0].merchantPhone
+          });
+        }
+        
+        // Appeler loadAllProducts pour mettre à jour allProducts
+        this.loadAllProducts();
       } catch (error) {
         console.error('Load products error:', error);
         this.merchantProducts = [];
@@ -819,38 +894,65 @@ function app() {
     handleCheckoutForm(event) {
       event.preventDefault();
 
-      if (this.cart.length === 0) {
-        this.showToast("Votre panier est vide", "error");
+      // Vérifier qu'on a bien un produit sélectionné
+      if (!this.currentCheckoutProduct) {
+        this.showToast("Aucun produit sélectionné", "error");
+        this.navigateTo('shop');
         return;
       }
 
       const formData = new FormData(event.target);
-      const orderData = {
-        items: this.cart,
-        total: this.getCartTotal(),
-        shipping: {
-          name: formData.get("name"),
-          email: formData.get("email"),
-          phone: formData.get("phone"),
-          address: formData.get("address"),
-          city: formData.get("city"),
-        },
-        payment: {
-          method: formData.get("paymentMethod"),
-        },
+      const customerInfo = {
+        name: formData.get("name"),
+        phone: formData.get("phone"),
+        address: formData.get("address"),
+        city: formData.get("city"),
       };
 
-      // Simulate order processing
+      // Générer le message WhatsApp
+      const message = this.generateWhatsAppMessage(
+        this.currentCheckoutProduct,
+        customerInfo
+      );
+
+      // Récupérer le numéro du merchant
+      const merchantPhone = this.currentMerchant?.phone || this.currentCheckoutProduct.merchantPhone;
+      
+      if (!merchantPhone || merchantPhone === '+237000000000') {
+        this.showToast("Numéro du marchand non disponible. Contactez le support.", "error");
+        return;
+      }
+
+      console.log('📤 [CHECKOUT] Redirection WhatsApp:', merchantPhone);
+
+      // Rediriger vers WhatsApp
+      const whatsappUrl = `https://wa.me/${merchantPhone.replace(/\+/g, '')}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+
+      // Confirmation
+      this.showToast('Redirection vers WhatsApp du marchand...', 'success');
+      
+      // Retour à la boutique après 2s
       setTimeout(() => {
-        this.clearCart();
-        this.showToast("Commande passée avec succès!", "success");
+        this.navigateTo('shop');
+      }, 2000);
+    },
 
-        // Redirect to WhatsApp for payment confirmation
-        const message = `Nouvelle commande Mervason:\nTotal: ${orderData.total} FCFA\nMode de paiement: ${orderData.payment.method}`;
-        this.contactViaWhatsApp({ name: "Commande", price: orderData.total });
+    // Générer le message WhatsApp formaté
+    generateWhatsAppMessage(product, customer) {
+      return `🛒 *Nouvelle Commande Mervason*
 
-        this.navigateTo("home");
-      }, 1000);
+📦 *Produit*
+Nom: ${product.name}
+Prix: ${this.formatPrice(product.price)}
+
+👤 *Client*
+Nom: ${customer.name}
+Tél: ${customer.phone}
+Ville: ${customer.city}
+Adresse: ${customer.address}
+
+Merci de confirmer la disponibilité du produit.`;
     },
 
     handleAddProductForm(event) {
@@ -1045,7 +1147,12 @@ function initializeAnimations() {
 document.addEventListener("click", function (e) {
   if (e.target.matches('a[href^="#"]')) {
     e.preventDefault();
-    const target = document.querySelector(e.target.getAttribute("href"));
+    const href = e.target.getAttribute("href");
+    
+    // Ignorer si href est juste "#" (vide)
+    if (!href || href === '#') return;
+    
+    const target = document.querySelector(href);
     if (target) {
       target.scrollIntoView({
         behavior: "smooth",
