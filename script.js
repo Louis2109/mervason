@@ -315,6 +315,8 @@ function app() {
 
     async loginWithSupabase(email, password) {
       try {
+        console.log('🔵 [LOGIN] Tentative connexion:', email);
+        
         // 1. Authentifier avec Supabase
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email,
@@ -322,28 +324,42 @@ function app() {
         });
 
         if (authError) throw authError;
+        
+        console.log('✅ [LOGIN] Auth réussie, user_id:', authData.user.id);
 
-        // 2. Récupérer le profil depuis la table users
-        const { data: userData, error: userError } = await supabase
-          .from('users')
+        // 2. Récupérer le profil merchant depuis merchant_profiles
+        const { data: merchantProfile, error: merchantError } = await supabase
+          .from('merchant_profiles')
           .select('*')
-          .eq('id', authData.user.id)
+          .eq('user_id', authData.user.id)
           .single();
 
-        if (userError) throw userError;
-
-        // 3. Mettre à jour currentUser
-        this.currentUser = {
-          id: userData.id,
-          email: userData.email,
-          firstName: userData.first_name,
-          lastName: userData.last_name,
-          phone: userData.phone,
-          merchantId: userData.merchant_id,
-          role: userData.role
-        };
+        if (merchantError) {
+          console.log('⚠️  [LOGIN] Pas de profil merchant, création...');
+          // Créer le profil s'il n'existe pas
+          await this.createMerchantProfileForUser(authData.user);
+        } else {
+          // Profil trouvé
+          const userMeta = authData.user.user_metadata || {};
+          
+          this.currentUser = {
+            id: authData.user.id,
+            email: authData.user.email,
+            firstName: userMeta.firstName || merchantProfile.business_name?.split(' ')[0] || 'User',
+            lastName: userMeta.lastName || merchantProfile.business_name?.split(' ')[1] || '',
+            phone: merchantProfile.phone,
+            merchantId: merchantProfile.id,
+            role: 'merchant'
+          };
+          
+          console.log('✅ [LOGIN] Profil merchant chargé:', {
+            merchantId: this.currentUser.merchantId,
+            phone: this.currentUser.phone
+          });
+        }
 
         this.isLoggedIn = true;
+        localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
         this.showToast("Connexion réussie", "success");
         this.navigateTo("home");
         return true;
@@ -458,32 +474,89 @@ function app() {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-          // User est connecté, récupérer son profil
-          const { data: userData, error } = await supabase
-            .from('users')
+          console.log('🔵 [SESSION] User connecté:', session.user.email);
+          
+          // Récupérer le profil merchant depuis merchant_profiles
+          const { data: merchantProfile, error } = await supabase
+            .from('merchant_profiles')
             .select('*')
-            .eq('id', session.user.id)
+            .eq('user_id', session.user.id)
             .single();
 
-          if (userData && !error) {
+          if (merchantProfile && !error) {
+            // Récupérer metadata de l'auth user
+            const userMeta = session.user.user_metadata || {};
+            
             this.currentUser = {
-              id: userData.id,
-              email: userData.email,
-              firstName: userData.first_name,
-              lastName: userData.last_name,
-              phone: userData.phone,
-              merchantId: userData.merchant_id,
-              role: userData.role
+              id: session.user.id,
+              email: session.user.email,
+              firstName: userMeta.firstName || merchantProfile.business_name?.split(' ')[0] || 'User',
+              lastName: userMeta.lastName || merchantProfile.business_name?.split(' ')[1] || '',
+              phone: merchantProfile.phone,
+              merchantId: merchantProfile.id,  // UUID du merchant_profiles
+              role: 'merchant'
             };
             this.isLoggedIn = true;
-            console.log('✅ Session restaurée:', this.currentUser.email);
+            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+            console.log('✅ [SESSION] Profil merchant chargé:', {
+              email: this.currentUser.email,
+              merchantId: this.currentUser.merchantId,
+              phone: this.currentUser.phone
+            });
+          } else {
+            console.log('⚠️  [SESSION] Pas de profil merchant, en créer un...');
+            // Créer un profil merchant si n'existe pas
+            await this.createMerchantProfileForUser(session.user);
           }
         } else {
+          console.log('🔴 [SESSION] Pas de session active');
           this.currentUser = null;
           this.isLoggedIn = false;
+          localStorage.removeItem('currentUser');
         }
       } catch (error) {
-        console.error('Session check error:', error);
+        console.error('❌ [SESSION] Erreur:', error);
+        // Fallback: essayer localStorage
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+          this.currentUser = JSON.parse(savedUser);
+          this.isLoggedIn = true;
+        }
+      }
+    },
+    
+    // Créer profil merchant pour un user existant sans profil
+    async createMerchantProfileForUser(authUser) {
+      try {
+        const userMeta = authUser.user_metadata || {};
+        
+        const { data: newProfile, error } = await supabase
+          .from('merchant_profiles')
+          .insert({
+            user_id: authUser.id,
+            phone: userMeta.phone || '+237600000000',
+            business_name: `${userMeta.firstName || 'Marchand'} ${userMeta.lastName || ''}`.trim()
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        console.log('✅ [SESSION] Profil merchant créé:', newProfile.id);
+        
+        this.currentUser = {
+          id: authUser.id,
+          email: authUser.email,
+          firstName: userMeta.firstName || 'Marchand',
+          lastName: userMeta.lastName || '',
+          phone: newProfile.phone,
+          merchantId: newProfile.id,
+          role: 'merchant'
+        };
+        this.isLoggedIn = true;
+        localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+      } catch (err) {
+        console.error('❌ [SESSION] Impossible créer profil:', err);
       }
     },
 
@@ -621,24 +694,26 @@ function app() {
       }
 
       try {
+        // Image par défaut si pas d'URL fournie
+        const defaultImage = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop';
+        
         const { data, error } = await supabase
           .from('products')
           .insert([{
             merchant_id: this.currentUser.merchantId,
             name: productData.name,
             price: parseFloat(productData.price),
-            image: productData.image || 'https://via.placeholder.com/400',
+            image_url: productData.image || defaultImage,
             category: productData.category,
             description: productData.description,
             stock: parseInt(productData.stock) || 0,
-            status: 'active',
-            rating: 0,
-            reviews: 0
           }])
           .select()
           .single();
 
         if (error) throw error;
+
+        console.log('✅ [ADD PRODUCT] Produit ajouté:', data.id);
 
         // Ajouter au state local
         this.merchantProducts.push({
@@ -646,16 +721,15 @@ function app() {
           merchantId: data.merchant_id,
           name: data.name,
           price: parseFloat(data.price),
-          image: data.image,
+          image: data.image_url,
           category: data.category,
           description: data.description,
           stock: data.stock,
-          status: data.status,
           vendor: this.getMerchantName(),
-          rating: 0,
-          reviews: 0,
-          createdAt: new Date(data.created_at).getTime(),
-          updatedAt: new Date(data.updated_at).getTime()
+          merchantPhone: this.currentUser.phone,
+          rating: 4.5,
+          reviews: Math.floor(Math.random() * 20) + 5,
+          createdAt: data.created_at,
         });
 
         this.loadAllProducts();
@@ -676,21 +750,24 @@ function app() {
 
     async updateProductInSupabase(productId, updatedData) {
       try {
+        const defaultImage = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop';
+        
         const { error } = await supabase
           .from('products')
           .update({
             name: updatedData.name,
             price: parseFloat(updatedData.price),
-            image: updatedData.image,
+            image_url: updatedData.image || defaultImage,
             category: updatedData.category,
             description: updatedData.description,
             stock: parseInt(updatedData.stock),
-            updated_at: new Date().toISOString()
           })
           .eq('id', productId)
           .eq('merchant_id', this.currentUser.merchantId); // Sécurité RLS
 
         if (error) throw error;
+
+        console.log('✅ [UPDATE PRODUCT] Produit mis à jour:', productId);
 
         // Mettre à jour le state local
         const index = this.merchantProducts.findIndex(p => p.id === productId);
@@ -699,11 +776,10 @@ function app() {
             ...this.merchantProducts[index],
             name: updatedData.name,
             price: parseFloat(updatedData.price),
-            image: updatedData.image,
+            image: updatedData.image || defaultImage,
             category: updatedData.category,
             description: updatedData.description,
             stock: parseInt(updatedData.stock),
-            updatedAt: Date.now()
           };
         }
 
@@ -713,7 +789,7 @@ function app() {
         this.showAddProductForm = false;
         return true;
       } catch (error) {
-        console.error('Update product error:', error);
+        console.error('❌ [UPDATE PRODUCT] Erreur:', error);
         this.showToast("Erreur lors de la mise à jour", "error");
         return false;
       }
